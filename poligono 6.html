@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calculadora de Área de Polígonos</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/p5.js"></script>
+</head>
+<body class="bg-gray-100 flex items-center justify-center h-screen">
+    <div class="bg-white p-6 rounded-lg shadow-lg w-full max-w-2xl">
+        <h2 class="text-xl font-bold mb-4 text-center">Calculadora de Área de Polígonos</h2>
+        <div class="flex justify-center mb-4">
+            <label class="mr-2">Número de lados:</label>
+            <select id="sidesCount" class="border p-2 rounded" onchange="generatePolygon()">
+                <option value="3">Triángulo</option>
+                <option value="4">Cuadrado</option>
+                <option value="5">Pentágono</option>
+                <option value="6">Hexágono</option>
+                <option value="7">Heptágono</option>
+                <option value="8">Octágono</option>
+            </select>
+        </div>
+        <div class="flex justify-center mb-4">
+            <label class="mr-2">Nombre del polígono:</label>
+            <input type="text" id="customName" class="border p-2 rounded w-full" placeholder="Ingrese un nombre opcional">
+        </div>
+        <div id="canvas-container" class="flex justify-center mb-4"></div>
+        <div id="sides-container" class="grid grid-cols-2 gap-4 mb-4"></div>
+        <p id="polygonName" class="text-center font-semibold mb-4"></p>
+        <div class="flex justify-center gap-2 mt-4">
+            <button class="bg-blue-500 text-white px-4 py-2 rounded" onclick="calculateArea()">Calcular Área</button>
+            <button class="bg-gray-500 text-white px-4 py-2 rounded" onclick="resetPolygon()">Reiniciar</button>
+            <button class="bg-red-500 text-white px-4 py-2 rounded" onclick="clearCanvas()">Eliminar</button>
+        </div>
+        <p id="result" class="text-center font-semibold mt-4"></p>
+    </div>
+    
+    <script>
+        let vertices = [];
+        let numSides = 3;
+        const polygonNames = ["", "", "Triángulo", "Cuadrado", "Pentágono", "Hexágono", "Heptágono", "Octágono"];
+
+        function setup() {
+            let canvas = createCanvas(400, 400);
+            canvas.parent('canvas-container');
+            generatePolygon();
+        }
+
+        function draw() {
+            background(255);
+            fill('rgba(0, 0, 255, 0.3)');
+            stroke(0);
+            strokeWeight(2);
+            if (vertices.length > 2) {
+                beginShape();
+                for (let v of vertices) {
+                    vertex(v.x, v.y);
+                }
+                endShape(CLOSE);
+                displaySideLengths();
+            }
+        }
+
+        function generatePolygon() {
+            numSides = parseInt(document.getElementById('sidesCount').value);
+            document.getElementById('polygonName').innerText = `Nombre del polígono: ${polygonNames[numSides]}`;
+            vertices = [];
+            let centerX = width / 2;
+            let centerY = height / 2;
+            let radius = 100;
+            for (let i = 0; i < numSides; i++) {
+                let angle = TWO_PI * (i / numSides);
+                let x = centerX + cos(angle) * radius;
+                let y = centerY + sin(angle) * radius;
+                vertices.push(createVector(x, y));
+            }
+            updateSideInputs();
+        }
+
+        function updateSideInputs() {
+            let container = document.getElementById('sides-container');
+            container.innerHTML = '';
+            for (let i = 0; i < numSides; i++) {
+                let label = document.createElement('label');
+                label.innerText = `Lado ${i + 1}:`;
+                let input = document.createElement('input');
+                input.type = 'number';
+                input.value = 100;
+                input.className = 'border p-2 rounded w-full';
+                input.onchange = function () {
+                    updatePolygonSides(i, parseFloat(input.value));
+                };
+                container.appendChild(label);
+                container.appendChild(input);
+            }
+        }
+
+        function updatePolygonSides(index, newValue) {
+            let angle = TWO_PI * (index / numSides);
+            let centerX = width / 2;
+            let centerY = height / 2;
+            vertices[index] = createVector(centerX + cos(angle) * newValue, centerY + sin(angle) * newValue);
+        }
+
+        function displaySideLengths() {
+            fill(0);
+            textSize(14);
+            for (let i = 0; i < vertices.length; i++) {
+                let next = (i + 1) % vertices.length;
+                let midX = (vertices[i].x + vertices[next].x) / 2;
+                let midY = (vertices[i].y + vertices[next].y) / 2;
+                let distance = dist(vertices[i].x, vertices[i].y, vertices[next].x, vertices[next].y).toFixed(2);
+                text(`${distance} (L${i + 1})`, midX, midY);
+            }
+        }
+
+        function calculateArea() {
+            if (vertices.length < 3) {
+                document.getElementById('result').innerText = "Selecciona al menos un triángulo";
+                return;
+            }
+            let area = 0;
+            for (let i = 0; i < vertices.length; i++) {
+                let j = (i + 1) % vertices.length;
+                area += vertices[i].x * vertices[j].y;
+                area -= vertices[i].y * vertices[j].x;
+            }
+            area = Math.abs(area) / 2;
+            let customName = document.getElementById('customName').value.trim();
+            let displayName = customName ? customName : polygonNames[numSides];
+            document.getElementById('result').innerText = `Área de ${displayName}: ${area.toFixed(2)} unidades cuadradas`;
+        }
+    </script>
+</body>
+</html>
